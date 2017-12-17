@@ -10,8 +10,22 @@ class TimeMe(bpy.types.Operator):
     bl_description = 'Start monitor my time'
 
     def modal(self, context, event):
-        print event.type
-        return {'FINISHED'}
+        print('modal')
+        print(event.type)
+        # return {'RUNNING_MODAL'}
+        return {'PASS_THROUGH'}
+
+    def invoke(self, context, event):
+        print('invoke')
+        # if context.object:
+        # context.window_manager.modal_handler_add(self)
+        # return {'RUNNING_MODAL'}
+        # return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        print('execute')
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
 
 
 def register():

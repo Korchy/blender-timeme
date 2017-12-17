@@ -15,11 +15,22 @@ bl_info = {
 
 from . import timeme
 from . import timeme_panel
+import bpy
+from bpy.app.handlers import persistent
+
+
+@persistent
+def onsceneupdatepost(scene):
+    bpy.app.handlers.scene_update_post.remove(onsceneupdatepost)
+    # bpy.ops.timeme.start('INVOKE_DEFAULT')
+    bpy.ops.timeme.start()
 
 
 def register():
     timeme.register()
     timeme_panel.register()
+    if onsceneupdatepost not in bpy.app.handlers.scene_update_post:
+        bpy.app.handlers.scene_update_post.append(onsceneupdatepost)
 
 
 def unregister():
