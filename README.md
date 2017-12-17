@@ -1,2 +1,2 @@
-# blender-timeme
-Blender - TimeMe
+# TimeMe
+Blender add-on
