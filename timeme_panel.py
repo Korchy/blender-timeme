@@ -10,6 +10,7 @@ class TimeMeCatsList(bpy.types.UIList):
         layout.label("", icon="COLOR")
         layout.prop(item, "catname", '')
         layout.prop(item, "cattime", '')
+        layout.prop(item, "cattime_str", '')
 
 
 class TimeMe_panel(bpy.types.Panel):
@@ -24,7 +25,7 @@ class TimeMe_panel(bpy.types.Panel):
         # self.layout.operator('uv_int.separate_meshloops_by_edge', icon = 'UNLINKED', text = 'Seam by edge')
         self.layout.prop(bpy.context.scene.timeMeVars, 'cats')
 
-        self.layout.template_list('TimeMeCatsList', 'Time Categories', bpy.context.scene.timeMeVars1, 'cats', bpy.context.scene.timeMeVars1, 'activecat', type='DEFAULT')
+        self.layout.template_list('TimeMeCatsList', 'Time Categories', bpy.context.scene.timeMeVars, 'cats', bpy.context.scene.timeMeVars, 'activecat', type='DEFAULT')
 
         self.layout.operator('timeme.print', icon = 'LINKED', text = 'Print')
         pass
