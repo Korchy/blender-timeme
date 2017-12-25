@@ -2,12 +2,10 @@
 # interplanety@interplanety.org
 
 import bpy
-from . import timeme
 
 
 class TimeMeCatsList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-        layout.label("", icon="COLOR")
         layout.prop(item, "catname", '')
         layout.prop(item, "cattime", '')
         layout.prop(item, "cattime_str", '')
@@ -21,13 +19,9 @@ class TimeMe_panel(bpy.types.Panel):
     bl_context = 'render'
 
     def draw(self, context):
-        # self.layout.operator('uv_int.separate_meshloops', icon = 'UNLINKED', text = 'Blast')
-        # self.layout.operator('uv_int.separate_meshloops_by_edge', icon = 'UNLINKED', text = 'Seam by edge')
-        self.layout.prop(bpy.context.scene.timeMeVars, 'cats')
-
-        self.layout.template_list('TimeMeCatsList', 'Time Categories', bpy.context.scene.timeMeVars, 'cats', bpy.context.scene.timeMeVars, 'activecat', type='DEFAULT')
-
-        self.layout.operator('timeme.print', icon = 'LINKED', text = 'Print')
+        if hasattr(bpy.context.scene, 'timeMeVars'):
+            self.layout.template_list('TimeMeCatsList', 'Time Categories', bpy.context.scene.timeMeVars, 'cats', bpy.context.scene.timeMeVars, 'activecat', type='DEFAULT')
+            self.layout.operator('timeme.print', icon = 'LINKED', text = 'Print')
         pass
 
 
