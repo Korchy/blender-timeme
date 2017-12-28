@@ -7,9 +7,9 @@ bl_info = {
     'author': 'Nikita Akimov',
     'version': (1, 0, 0),
     'blender': (2, 79, 0),
-    'location': '',
-    'wiki_url': '',
-    'tracker_url': '',
+    'location': 'Properties window - Render tab - TimeMe subpanel',
+    'wiki_url': 'https://b3d.interplanety.org/en/blender-timeme/',
+    'tracker_url': 'https://b3d.interplanety.org/en/blender-timeme/',
     'description': 'TimeMe - add-on to manage the project time'
 }
 
@@ -29,6 +29,7 @@ def register():
     timeme_panel.register()
     if onsceneupdatepost not in bpy.app.handlers.scene_update_post:
         bpy.app.handlers.scene_update_post.append(onsceneupdatepost)
+
 
 def unregister():
     if onsceneupdatepost in bpy.app.handlers.scene_update_post:
