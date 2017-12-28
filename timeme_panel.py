@@ -6,9 +6,8 @@ import bpy
 
 class TimeMeCatsList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-        layout.prop(item, "catname", '')
-        layout.prop(item, "cattime", '')
-        layout.prop(item, "cattime_str", '')
+        layout.label(item.catname)
+        layout.label(item.cattime_str)
 
 
 class TimeMe_panel(bpy.types.Panel):
@@ -20,8 +19,8 @@ class TimeMe_panel(bpy.types.Panel):
 
     def draw(self, context):
         if hasattr(bpy.context.scene, 'timeMeVars'):
-            self.layout.template_list('TimeMeCatsList', 'Time Categories', bpy.context.scene.timeMeVars, 'cats', bpy.context.scene.timeMeVars, 'activecat', type='DEFAULT')
-            self.layout.operator('timeme.print', icon = 'LINKED', text = 'Print')
+            self.layout.template_list('TimeMeCatsList', 'Time Categories', bpy.context.scene.timeMeVars, 'cats', bpy.context.scene.timeMeVars, 'activecat', rows=3, type='DEFAULT')
+            self.layout.operator('timeme.print', icon = 'FILE_TEXT', text = 'To Text')
         pass
 
 

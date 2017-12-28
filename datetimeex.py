@@ -5,7 +5,7 @@
 class DateTimeEx:
 
     @staticmethod
-    def deltatimetostr(seconds):
+    def deltatimetostrDHM(seconds):
         days = divmod(seconds, 86400)
         hours = divmod(days[1], 3600)
         minutes = divmod(hours[1], 60)
