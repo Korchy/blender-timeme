@@ -71,6 +71,7 @@ class TimeMe(bpy.types.Operator):
                 bpy.app.handlers.render_complete.append(TimeMe.onrender_complete)
             if TimeMe.onrender_cancel not in bpy.app.handlers.render_cancel:
                 bpy.app.handlers.render_cancel.append(TimeMe.onrender_cancel)
+            cls.getcat('ALL TIME')
             cls.status = 'RUNNING'
 
     @classmethod
