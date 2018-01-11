@@ -20,7 +20,9 @@ class TimeMe_panel(bpy.types.Panel):
     def draw(self, context):
         if hasattr(bpy.context.scene, 'timeMeVars'):
             self.layout.template_list('TimeMeCatsList', 'Time Categories', bpy.context.scene.timeMeVars, 'cats', bpy.context.scene.timeMeVars, 'activecat', rows=3, type='DEFAULT')
-            self.layout.operator('timeme.print', icon = 'FILE_TEXT', text = 'To Text')
+            row = self.layout.row()
+            row.operator('timeme.print', icon='FILE_TEXT', text='To Text')
+            row.operator('timeme.toclipboard', icon='COPYDOWN', text='To Clipboard')
         pass
 
 

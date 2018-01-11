@@ -38,14 +38,13 @@ class TimeMe(bpy.types.Operator):
                 # reset
                 self.time = datetime.datetime.now()
                 del self.eventslist[:]
-            for area in bpy.context.screen.areas:
-                area.tag_redraw()
+            __class__.redraw()
             return {'PASS_THROUGH'}
         else:
             return {'FINISHED'}
 
     def execute(self, context):
-        if self.status: # double run
+        if self.status:     # double run
             return {'FINISHED'}
         if self not in bpy.context.window_manager.items():
             context.window_manager.modal_handler_add(self)
@@ -97,6 +96,16 @@ class TimeMe(bpy.types.Operator):
         newcat.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(newcat.cattime)
         return newcat
 
+    @staticmethod
+    def gettext():
+        text = '='*50 + '\n'
+        text += '= Counting this project time by TimeMe! = \n'
+        text += '='*50 + '\n'
+        for cat in bpy.context.scene.timeMeVars.cats:
+            text += (cat.catname + ': ' + cat.cattime_str)+'\n'
+        text += '='*50
+        return text
+
     @classmethod
     def onrender_init(cls, scene):
         cls.time_render = datetime.datetime.now()
@@ -106,6 +115,7 @@ class TimeMe(bpy.types.Operator):
         catitem = cls.getcat('RENDER TIME')
         catitem.cattime += (datetime.datetime.now() - cls.time_render).total_seconds()
         catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
+        __class__.redraw()
         delattr(cls, 'time_render')
 
     @classmethod
@@ -113,7 +123,14 @@ class TimeMe(bpy.types.Operator):
         catitem = cls.getcat('RENDER TIME')
         catitem.cattime += (datetime.datetime.now() - cls.time_render).total_seconds()
         catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
+        __class__.redraw()
         delattr(cls, 'time_render')
+
+    @staticmethod
+    def redraw():
+        areas = bpy.context.screen.areas if bpy.context.screen else bpy.data.window_managers[0].windows[0].screen.areas
+        for area in areas:
+            area.tag_redraw()
 
 
 class TimeMePrint(bpy.types.Operator):
@@ -121,17 +138,11 @@ class TimeMePrint(bpy.types.Operator):
     bl_label = 'TimeMe: Print'
 
     def execute(self, context):
-        text = '='*50 + '\n'
-        text += '= Counting this project time by TimeMe! = \n'
-        text += '='*50 + '\n'
-        for cat in bpy.context.scene.timeMeVars.cats:
-            text += (cat.catname + ': ' + cat.cattime_str)+'\n'
-        text += '='*50
         if 'TimeMe' in bpy.data.texts:
             textObj = bpy.data.texts['TimeMe']
         else:
             textObj = bpy.data.texts.new(name='TimeMe')
-        textObj.from_string(text)
+        textObj.from_string(TimeMe.gettext())
         textObj.name = 'TimeMe'
         areatoshow = None
         for area in bpy.context.screen.areas:
@@ -146,6 +157,15 @@ class TimeMePrint(bpy.types.Operator):
             areatoshow.type = 'TEXT_EDITOR'
             areatoshow.spaces.active.text = bpy.data.texts['TimeMe']
             bpy.data.texts['TimeMe'].current_line_index = 0
+        return {'FINISHED'}
+
+
+class TimeMeToClipboard(bpy.types.Operator):
+    bl_idname = 'timeme.toclipboard'
+    bl_label = 'TimeMe: ToClipboard'
+
+    def execute(self, context):
+        bpy.context.window_manager.clipboard = TimeMe.gettext()
         return {'FINISHED'}
 
 
@@ -172,6 +192,7 @@ def onsceneload_pre(scene):
 def register():
     bpy.utils.register_class(TimeMe)
     bpy.utils.register_class(TimeMePrint)
+    bpy.utils.register_class(TimeMeToClipboard)
     bpy.utils.register_class(TimeMeCatsItem)
     bpy.utils.register_class(TimeMeVars)
     if onsceneload_pre not in bpy.app.handlers.load_pre:
@@ -187,6 +208,7 @@ def unregister():
     if onsceneload_post in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(onsceneload_post)
     bpy.utils.unregister_class(TimeMe)
+    bpy.utils.unregister_class(TimeMeToClipboard)
     bpy.utils.unregister_class(TimeMePrint)
     bpy.utils.unregister_class(TimeMeCatsItem)
     bpy.utils.unregister_class(TimeMeVars)

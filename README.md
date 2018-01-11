@@ -15,7 +15,7 @@ User Preferences - Add-ons - Install Add-on from File - select downloaded archiv
 
 Location: "Properties" window - "Render" tab - "TimeMe" subtab
 
-The addon works in the background, fixing the project developing time.
+The add-on works in the background, fixing the project developing time.
 
 <img src="https://b3d.interplanety.org/wp-content/upload_content/2017/12/01-2-400x212.jpg">
 
@@ -24,6 +24,10 @@ The addon works in the background, fixing the project developing time.
 2.79
 
 **Version history:**
+
+1.1.0
+- Seconds accuracy enabled
+- Added copy to Clipboard function
 
 1.0.0
 - This release
