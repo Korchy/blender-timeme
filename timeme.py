@@ -15,7 +15,7 @@ class TimeMe(bpy.types.Operator):
     status = None
     eventslist = []
     time = datetime.datetime.now()
-    check_interval = 60 # sec
+    check_interval = 1  # sec
 
     def modal(self, context, event):
         if self.status:
@@ -25,7 +25,7 @@ class TimeMe(bpy.types.Operator):
                 # whole time
                 catitem = __class__.getcat('ALL TIME')
                 catitem.cattime += (datetime.datetime.now() - self.time).total_seconds()
-                catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHM(catitem.cattime)
+                catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
                 # work time
                 is_work = False
                 for event in self.eventslist:
@@ -34,7 +34,7 @@ class TimeMe(bpy.types.Operator):
                 if is_work:
                     catitem = __class__.getcat('WORK TIME')
                     catitem.cattime += self.check_interval
-                    catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHM(catitem.cattime)
+                    catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
                 # reset
                 self.time = datetime.datetime.now()
                 del self.eventslist[:]
@@ -94,7 +94,7 @@ class TimeMe(bpy.types.Operator):
         newcat = bpy.context.scene.timeMeVars.cats.add()
         newcat.catname = catname
         newcat.cattime = datetime.timedelta().total_seconds()
-        newcat.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHM(newcat.cattime)
+        newcat.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(newcat.cattime)
         return newcat
 
     @classmethod
@@ -105,14 +105,14 @@ class TimeMe(bpy.types.Operator):
     def onrender_complete(cls, scene):
         catitem = cls.getcat('RENDER TIME')
         catitem.cattime += (datetime.datetime.now() - cls.time_render).total_seconds()
-        catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHM(catitem.cattime)
+        catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
         delattr(cls, 'time_render')
 
     @classmethod
     def onrender_cancel(cls, scene):
         catitem = cls.getcat('RENDER TIME')
         catitem.cattime += (datetime.datetime.now() - cls.time_render).total_seconds()
-        catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHM(catitem.cattime)
+        catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
         delattr(cls, 'time_render')
 
 
