@@ -27,7 +27,8 @@ The add-on works in the background, fixing the project developing time.
 
 1.1.0
 - Seconds accuracy enabled
-- Added copy to Clipboard function
+- Added Copy to clipboard function
+- Added Reset time function
 
 1.0.0
 - This release
