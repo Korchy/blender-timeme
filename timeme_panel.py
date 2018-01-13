@@ -23,6 +23,7 @@ class TimeMe_panel(bpy.types.Panel):
             row = self.layout.row()
             row.operator('timeme.print', icon='FILE_TEXT', text='To Text')
             row.operator('timeme.toclipboard', icon='COPYDOWN', text='To Clipboard')
+            row.operator('timeme.reset', icon='X', text='Reset')
         pass
 
 

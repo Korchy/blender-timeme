@@ -169,6 +169,15 @@ class TimeMeToClipboard(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class TimeMeReset(bpy.types.Operator):
+    bl_idname = 'timeme.reset'
+    bl_label = 'TimeMe: Reset'
+
+    def execute(self, context):
+        TimeMe.clear()
+        return {'FINISHED'}
+
+
 class TimeMeCatsItem(bpy.types.PropertyGroup):
     catname = bpy.props.StringProperty(name='catname', default='')
     cattime = bpy.props.FloatProperty(name='cattime')
@@ -193,6 +202,7 @@ def register():
     bpy.utils.register_class(TimeMe)
     bpy.utils.register_class(TimeMePrint)
     bpy.utils.register_class(TimeMeToClipboard)
+    bpy.utils.register_class(TimeMeReset)
     bpy.utils.register_class(TimeMeCatsItem)
     bpy.utils.register_class(TimeMeVars)
     if onsceneload_pre not in bpy.app.handlers.load_pre:
@@ -208,6 +218,7 @@ def unregister():
     if onsceneload_post in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(onsceneload_post)
     bpy.utils.unregister_class(TimeMe)
+    bpy.utils.unregister_class(TimeMeReset)
     bpy.utils.unregister_class(TimeMeToClipboard)
     bpy.utils.unregister_class(TimeMePrint)
     bpy.utils.unregister_class(TimeMeCatsItem)
