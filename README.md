@@ -17,7 +17,7 @@ Location: "Properties" window - "Render" tab - "TimeMe" subtab
 
 The add-on works in the background, fixing the project developing time.
 
-<img src="https://b3d.interplanety.org/wp-content/upload_content/2017/12/01-2-400x212.jpg">
+<img src="https://b3d.interplanety.org/wp-content/upload_content/2018/01/02-400x212.jpg">
 
 **Tested with Blender versions:**
 
