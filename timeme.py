@@ -171,12 +171,14 @@ class TimeMeToClipboard(bpy.types.Operator):
 
 class TimeMeReset(bpy.types.Operator):
     bl_idname = 'timeme.reset'
-    bl_label = 'TimeMe: Reset'
+    bl_label = 'Are you sure?'
 
     def execute(self, context):
         TimeMe.clear()
         return {'FINISHED'}
 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=90)
 
 class TimeMeCatsItem(bpy.types.PropertyGroup):
     catname = bpy.props.StringProperty(name='catname', default='')
