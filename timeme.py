@@ -5,6 +5,7 @@ import bpy
 import datetime
 from . import datetimeex
 from bpy.app.handlers import persistent
+import os
 
 
 class TimeMe(bpy.types.Operator):
@@ -99,8 +100,9 @@ class TimeMe(bpy.types.Operator):
     @staticmethod
     def gettext():
         text = '='*50 + '\n'
-        text += '= Counting this project time by TimeMe! = \n'
+        text += '= Counting this project time by TimeMe = \n'
         text += '='*50 + '\n'
+        text += 'PROJECT: ' + os.path.splitext(os.path.basename(bpy.data.filepath))[0] + '\n'
         for cat in bpy.context.scene.timeMeVars.cats:
             text += (cat.catname + ': ' + cat.cattime_str)+'\n'
         text += '='*50
