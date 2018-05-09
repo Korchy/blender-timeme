@@ -1,11 +1,14 @@
 # Nikita Akimov
 # interplanety@interplanety.org
+#
+# GitHub
+#   https://github.com/Korchy/blender-timeme
 
 bl_info = {
     'name': 'TimeMe',
     'category': 'System',
     'author': 'Nikita Akimov',
-    'version': (1, 1, 1),
+    'version': (1, 1, 2),
     'blender': (2, 79, 0),
     'location': 'Properties window - Render tab - TimeMe subpanel',
     'wiki_url': 'https://b3d.interplanety.org/en/blender-timeme/',

@@ -1,5 +1,8 @@
 # Nikita Akimov
 # interplanety@interplanety.org
+#
+# GitHub
+#   https://github.com/Korchy/blender-timeme
 
 import bpy
 import datetime
@@ -17,6 +20,7 @@ class TimeMe(bpy.types.Operator):
     eventslist = []
     time = datetime.datetime.now()
     check_interval = 1  # sec
+    work_time_damping = 10  # sec
 
     def modal(self, context, event):
         if self.status:
@@ -30,11 +34,14 @@ class TimeMe(bpy.types.Operator):
                 # work time
                 is_work = False
                 for event in self.eventslist:
-                    if event not in ['NONE', 'WINDOW_DEACTIVATE', 'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'] and event[:5] not in ['TIMER', 'NDOF_']:
+                    if event not in ['NONE', 'WINDOW_DEACTIVATE'] and event[:5] not in ['TIMER', 'NDOF_']:
                         is_work = True
                 if is_work:
                     catitem = __class__.getcat('WORK TIME')
-                    catitem.cattime += self.check_interval
+                    if datetime.datetime.now() - datetime.timedelta(seconds=self.work_time_damping) > self.time:
+                        catitem.cattime += self.work_time_damping
+                    else:
+                        catitem.cattime += (datetime.datetime.now() - self.time).total_seconds()
                     catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
                 # reset
                 self.time = datetime.datetime.now()
