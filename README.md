@@ -3,7 +3,7 @@ Blender add-on for fixing the time of making your projects.
 
 Author: Nikita Akimov interplanety@interplanety.org
 
-<a href="https://b3d.interplanety.org/en/blender-timeme/">Add-on web site</a>
+<a href="https://b3d.interplanety.org/en/blender-timeme/">Add-on web page</a>
 
 <img src="https://b3d.interplanety.org/wp-content/upload_content/2017/12/00-1-400x212.jpg" title="TimeMe">
 
