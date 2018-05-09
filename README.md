@@ -34,7 +34,7 @@ The add-on works in the background, fixing the project developing time.
 - Work time damping time added 
 
 1.1.1
-- Fixing some inessential bugs
+- Added project name to statistic text
 
 1.1.0
 - Seconds accuracy enabled
