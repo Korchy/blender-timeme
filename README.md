@@ -7,6 +7,10 @@ Author: Nikita Akimov interplanety@interplanety.org
 
 <img src="https://b3d.interplanety.org/wp-content/upload_content/2017/12/00-1-400x212.jpg" title="TimeMe">
 
+**Current version**
+
+1.1.2
+
 **Installation**
 
 User Preferences - Add-ons - Install Add-on from File - select downloaded archive
@@ -24,6 +28,13 @@ The add-on works in the background, fixing the project developing time.
 2.79
 
 **Version history:**
+
+1.1.2
+- Enable counting the mouse move event in work time category
+- Work time damping time added 
+
+1.1.1
+- Fixing some inessential bugs
 
 1.1.0
 - Seconds accuracy enabled
