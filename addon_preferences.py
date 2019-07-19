@@ -17,10 +17,15 @@ class TIMEME_addon_preferences(AddonPreferences):
         name='Consider canceled rendering time',
         default=False
     )
+    use_timeme_auto_save: BoolProperty(
+        name='Enable autosave with TimeMe (may slow down performance)',
+        default=False
+    )
 
     def draw(self, context):
         layout = self.layout
         layout.prop(self, 'consider_canceled_rendering_time')
+        layout.prop(self, 'use_timeme_auto_save')
 
 
 def register():

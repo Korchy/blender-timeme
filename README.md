@@ -29,11 +29,14 @@ The add-on works in the background, fixing the project developing time.
 
 &nbsp;
 
+System autosave doesn't work with running TimeMe. To fix this you can use the built-in TimeMe autosave. To do this - check the "Enable autosave with TimeMe" checkbox in the add-on preferences. 
+
 ### Version history
 
 1.2.0.
 - Ported to Blender 2.80. Version for 2.7x frozen.
 - Added new monitoring category "ACTIVE TIME" - time with main Blender window being active
+- Fixed broken autosaves with built-in autosave option
 
 1.1.2
 - Enable counting the mouse move event in work time category

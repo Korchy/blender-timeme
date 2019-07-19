@@ -24,6 +24,7 @@ class TIMEME_OT_start(Operator):
     _current_time = datetime.datetime.now()
     _current_window_active = True
     _current_render_time = None
+    _current_autosave_time = datetime.datetime.now()
     _check_interval = 1  # sec
     _work_time_damping = 10  # sec
 
@@ -63,6 +64,11 @@ class TIMEME_OT_start(Operator):
                 del self._events_list[:]
                 # redraw
                 __class__._redraw(context=context)
+                # check autosave
+                if context.preferences.filepaths.use_auto_save_temporary_files and context.preferences.addons[__package__].preferences.use_timeme_auto_save:
+                    if datetime.datetime.now() - datetime.timedelta(minutes=context.preferences.filepaths.auto_save_time) > self._current_autosave_time:
+                        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(context.preferences.filepaths.temporary_directory, __class__.project_name()), copy=True, check_existing=False)
+                        self._current_autosave_time = datetime.datetime.now()
             return {'PASS_THROUGH'}
         else:
             return {'FINISHED'}
@@ -163,6 +169,13 @@ class TIMEME_OT_start(Operator):
         text += '='*50
         return text
 
+    @staticmethod
+    def project_name():
+        # returns current project name
+        if bpy.data.filepath:
+            return os.path.splitext(os.path.basename(bpy.data.filepath))[0] + '.blend'
+        else:
+            return 'untitled.blend'
 
 class TimeMePrint(Operator):
     bl_idname = 'timeme.print'
