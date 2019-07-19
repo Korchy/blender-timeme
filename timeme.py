@@ -6,231 +6,279 @@
 
 import bpy
 import datetime
-from . import datetimeex
+from .datetimeex import DateTimeEx
 from bpy.app.handlers import persistent
+from bpy.props import FloatProperty, StringProperty, IntProperty, CollectionProperty, PointerProperty
+from bpy.types import Operator, PropertyGroup
+from bpy.utils import register_class, unregister_class
 import os
 
 
-class TimeMe(bpy.types.Operator):
+class TIMEME_OT_start(Operator):
     bl_idname = 'timeme.start'
     bl_label = 'TimeMe: Start'
-    bl_description = 'Start monitor my time'
+    bl_description = 'Start TimeMe monitor'
 
-    status = None
-    eventslist = []
-    time = datetime.datetime.now()
-    check_interval = 1  # sec
-    work_time_damping = 10  # sec
+    _status = None
+    _events_list = []
+    _current_time = datetime.datetime.now()
+    _current_window_active = True
+    _current_render_time = None
+    _check_interval = 1  # sec
+    _work_time_damping = 10  # sec
+
+    def execute(self, context):
+        if self._status:     # prevent double run
+            return {'FINISHED'}
+        __class__.start()
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        if self.status:
-            if event.type not in self.eventslist:
-                self.eventslist.append(event.type)
-            if datetime.datetime.now() - datetime.timedelta(seconds=self.check_interval) > self.time:
-                # whole time
-                catitem = __class__.getcat('ALL TIME')
-                catitem.cattime += (datetime.datetime.now() - self.time).total_seconds()
-                catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
-                # work time
-                is_work = False
-                for event in self.eventslist:
-                    if event not in ['NONE', 'WINDOW_DEACTIVATE'] and event[:5] not in ['TIMER', 'NDOF_']:
-                        is_work = True
-                if is_work:
-                    catitem = __class__.getcat('WORK TIME')
-                    if datetime.datetime.now() - datetime.timedelta(seconds=self.work_time_damping) > self.time:
-                        catitem.cattime += self.work_time_damping
+        if self._status:
+            if event.type not in self._events_list:
+                self._events_list.append(event.type)
+            # check window deactivation - activation
+            if event.type == 'WINDOW_DEACTIVATE':
+                self._current_window_active = False
+            elif (not self._current_window_active) and event.type not in ['MOUSEMOVE', 'INBETWEEN_MOUSEMOVE', 'NONE'] and event.type[:5] not in ['TIMER', 'NDOF_']:
+                self._current_window_active = True
+            # count time by categories
+            if datetime.datetime.now() - datetime.timedelta(seconds=self._check_interval) > self._current_time:
+                # ALL TIME
+                __class__._increase_category_time(context=context, category_name='ALL TIME', time_interval=(datetime.datetime.now() - self._current_time))
+                # ACTIVE TIME
+                if self._current_window_active:
+                    __class__._increase_category_time(context=context, category_name='ACTIVE TIME', time_interval=(datetime.datetime.now() - self._current_time))
+                # WORK TIME
+                work_event = any((event not in ['NONE', 'WINDOW_DEACTIVATE'] and event[:5] not in ['TIMER', 'NDOF_']) for event in self._events_list)
+                if work_event and self._current_window_active:
+                    if datetime.datetime.now() - datetime.timedelta(seconds=self._work_time_damping) > self._current_time:
+                        time = datetime.timedelta(seconds=self._work_time_damping)
                     else:
-                        catitem.cattime += (datetime.datetime.now() - self.time).total_seconds()
-                    catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
-                # reset
-                self.time = datetime.datetime.now()
-                del self.eventslist[:]
-            __class__.redraw()
+                        time = datetime.datetime.now() - self._current_time
+                    __class__._increase_category_time(context=context, category_name='WORK TIME', time_interval=time)
+                # wait for new events
+                self._current_time = datetime.datetime.now()
+                del self._events_list[:]
+                # redraw
+                __class__._redraw(context=context)
             return {'PASS_THROUGH'}
         else:
             return {'FINISHED'}
 
-    def execute(self, context):
-        if self.status:     # double run
-            return {'FINISHED'}
-        if self not in bpy.context.window_manager.items():
-            context.window_manager.modal_handler_add(self)
-        __class__.start()
-        return {'RUNNING_MODAL'}
-
-    def cancel(self, context):
-        __class__.stop()
-        return None
-
-    @classmethod
-    def clear(cls):
-        bpy.context.scene.timeMeVars.cats.clear()
-
-    @classmethod
-    def start(cls):
-        if not cls.status:
-            bpy.types.Scene.timeMeVars = bpy.props.PointerProperty(type=TimeMeVars)
-            cls.time = datetime.datetime.now()
-            if TimeMe.onrender_init not in bpy.app.handlers.render_init:
-                bpy.app.handlers.render_init.append(TimeMe.onrender_init)
-            if TimeMe.onrender_complete not in bpy.app.handlers.render_complete:
-                bpy.app.handlers.render_complete.append(TimeMe.onrender_complete)
-            if TimeMe.onrender_cancel not in bpy.app.handlers.render_cancel:
-                bpy.app.handlers.render_cancel.append(TimeMe.onrender_cancel)
-            cls.getcat('ALL TIME')
-            cls.status = 'RUNNING'
-
-    @classmethod
-    def stop(cls):
-        cls.status = None
-        if TimeMe.onrender_init in bpy.app.handlers.render_init:
-            bpy.app.handlers.render_init.remove(TimeMe.onrender_init)
-        if TimeMe.onrender_complete in bpy.app.handlers.render_complete:
-            bpy.app.handlers.render_complete.remove(TimeMe.onrender_complete)
-        if TimeMe.onrender_cancel in bpy.app.handlers.render_cancel:
-            bpy.app.handlers.render_cancel.remove(TimeMe.onrender_cancel)
-        if hasattr(bpy.types.Scene, 'timeMeVars'):
-            del bpy.types.Scene.timeMeVars
+    @staticmethod
+    def start():
+        if not __class__._status:
+            __class__._reset()
+            if __class__._timeme_render_init not in bpy.app.handlers.render_init:
+                bpy.app.handlers.render_init.append(__class__._timeme_render_init)
+            if __class__._timeme_render_complete not in bpy.app.handlers.render_complete:
+                bpy.app.handlers.render_complete.append(__class__._timeme_render_complete)
+            if __class__._timeme_render_cancel not in bpy.app.handlers.render_cancel:
+                bpy.app.handlers.render_cancel.append(__class__._timeme_render_cancel)
+            __class__._status = 'RUNNING'
 
     @staticmethod
-    def getcat(catname):
-        for cat in bpy.context.scene.timeMeVars.cats:
-            if cat.catname == catname:
-                return cat
-        newcat = bpy.context.scene.timeMeVars.cats.add()
-        newcat.catname = catname
-        newcat.cattime = datetime.timedelta().total_seconds()
-        newcat.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(newcat.cattime)
-        return newcat
+    def stop(context):
+        if __class__._status:
+            __class__._status = None
+            if hasattr(bpy.types.Scene, 'timeme_vars'):
+                __class__.clear(context=context)
+                del bpy.types.Scene.timeme_vars
+        if __class__._timeme_render_init in bpy.app.handlers.render_init:
+            bpy.app.handlers.render_init.remove(__class__._timeme_render_init)
+        if __class__._timeme_render_complete in bpy.app.handlers.render_complete:
+            bpy.app.handlers.render_complete.remove(__class__._timeme_render_complete)
+        if __class__._timeme_render_cancel in bpy.app.handlers.render_cancel:
+            bpy.app.handlers.render_cancel.remove(__class__._timeme_render_cancel)
 
     @staticmethod
-    def gettext():
+    def _reset():
+        # reset timeme data
+        bpy.types.Scene.timeme_vars = PointerProperty(type=TimeMeVars)
+        __class__._current_time = datetime.datetime.now()
+
+    @staticmethod
+    def clear(context):
+        # remove all categories from list
+        context.scene.timeme_vars.categories.clear()
+
+    @staticmethod
+    def _redraw(context=None):
+        areas = context.screen.areas if context and context.screen else bpy.data.window_managers[0].windows[0].screen.areas
+        for area in areas:
+            if area.type == 'PROPERTIES':
+                area.tag_redraw()
+
+    @staticmethod
+    def _add_category(context, category_name):
+        # add new category to list
+        new_category = context.scene.timeme_vars.categories.add()
+        new_category.category_name = category_name
+        new_category.category_time = datetime.timedelta().total_seconds()
+        new_category.category_time_str = DateTimeEx.deltatimetostrDHMS(new_category.category_time)
+        return new_category
+
+    @staticmethod
+    def _get_category(context, category_name):
+        # return category from list by name (creates if not exists)
+        category = next((c_category for c_category in context.scene.timeme_vars.categories if c_category.category_name == category_name), None)
+        if not category:
+            category = __class__._add_category(context=context, category_name=category_name)
+        return category
+
+    @staticmethod
+    def _increase_category_time(context, category_name, time_interval):
+        # increase category time
+        if category_name and time_interval:
+            category = __class__._get_category(context=context, category_name=category_name)
+            category.category_time += time_interval.total_seconds()
+            category.category_time_str = DateTimeEx.deltatimetostrDHMS(seconds=category.category_time)
+
+    @staticmethod
+    def _timeme_render_init(scene):
+        __class__._current_render_time = datetime.datetime.now()
+
+    @staticmethod
+    def _timeme_render_complete(scene):
+        if __class__._current_render_time:
+            __class__._increase_category_time(context=bpy.context, category_name='RENDER TIME', time_interval=(datetime.datetime.now() - __class__._current_render_time))
+            __class__._redraw()
+            __class__._current_render_time = None
+
+    @staticmethod
+    def _timeme_render_cancel(scene):
+        if bpy.context.preferences.addons[__package__].preferences.consider_canceled_rendering_time:
+            __class__._timeme_render_complete(scene=scene)
+
+    @staticmethod
+    def get_text(context):
         text = '='*50 + '\n'
-        text += '= Counting this project time by TimeMe = \n'
+        text += '= Monitoring this project time by TimeMe = \n'
         text += '='*50 + '\n'
         text += 'PROJECT: ' + os.path.splitext(os.path.basename(bpy.data.filepath))[0] + '\n'
-        for cat in bpy.context.scene.timeMeVars.cats:
-            text += (cat.catname + ': ' + cat.cattime_str)+'\n'
+        for category in context.scene.timeme_vars.categories:
+            text += (category.category_name + ': ' + category.category_time_str)+'\n'
         text += '='*50
         return text
 
-    @classmethod
-    def onrender_init(cls, scene):
-        cls.time_render = datetime.datetime.now()
 
-    @classmethod
-    def onrender_complete(cls, scene):
-        catitem = cls.getcat('RENDER TIME')
-        catitem.cattime += (datetime.datetime.now() - cls.time_render).total_seconds()
-        catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
-        __class__.redraw()
-        delattr(cls, 'time_render')
-
-    @classmethod
-    def onrender_cancel(cls, scene):
-        catitem = cls.getcat('RENDER TIME')
-        catitem.cattime += (datetime.datetime.now() - cls.time_render).total_seconds()
-        catitem.cattime_str = datetimeex.DateTimeEx.deltatimetostrDHMS(catitem.cattime)
-        __class__.redraw()
-        delattr(cls, 'time_render')
-
-    @staticmethod
-    def redraw():
-        areas = bpy.context.screen.areas if bpy.context.screen else bpy.data.window_managers[0].windows[0].screen.areas
-        for area in areas:
-            area.tag_redraw()
-
-
-class TimeMePrint(bpy.types.Operator):
+class TimeMePrint(Operator):
     bl_idname = 'timeme.print'
     bl_label = 'TimeMe: Print'
+    bl_description = 'Print TimeMe statistic'
 
     def execute(self, context):
-        if 'TimeMe' in bpy.data.texts:
-            textObj = bpy.data.texts['TimeMe']
-        else:
-            textObj = bpy.data.texts.new(name='TimeMe')
-        textObj.from_string(TimeMe.gettext())
-        textObj.name = 'TimeMe'
-        areatoshow = None
-        for area in bpy.context.screen.areas:
-            if area.type == 'TEXT_EDITOR':
-                areatoshow = area
-        if not areatoshow:
-            for area in bpy.context.screen.areas:
-                if area.type not in ['PROPERTIES', 'INFO', 'OUTLINER']:
-                    areatoshow = area
-                    break
-        if areatoshow:
-            areatoshow.type = 'TEXT_EDITOR'
-            areatoshow.spaces.active.text = bpy.data.texts['TimeMe']
+        text_obj = bpy.data.texts['TimeMe'] if 'TimeMe' in bpy.data.texts else bpy.data.texts.new(name='TimeMe')
+        text_obj.from_string(TIMEME_OT_start.get_text(context=context))
+        show_in_area = next((area for area in context.screen.areas if area.type == 'TEXT_EDITOR'), None)
+        if not show_in_area:
+            show_in_area = next((area for area in context.screen.areas if area.type not in ['PROPERTIES', 'INFO', 'OUTLINER']), None)
+            if show_in_area:
+                show_in_area.type = 'TEXT_EDITOR'
+        if show_in_area:
+            show_in_area.spaces.active.text = bpy.data.texts['TimeMe']
             bpy.data.texts['TimeMe'].current_line_index = 0
         return {'FINISHED'}
 
 
-class TimeMeToClipboard(bpy.types.Operator):
+class TimeMeToClipboard(Operator):
     bl_idname = 'timeme.toclipboard'
     bl_label = 'TimeMe: ToClipboard'
+    bl_description = 'Copy TimeMe statistic to clipboard'
 
     def execute(self, context):
-        bpy.context.window_manager.clipboard = TimeMe.gettext()
+        context.window_manager.clipboard = TIMEME_OT_start.get_text(context=context)
         return {'FINISHED'}
 
 
-class TimeMeReset(bpy.types.Operator):
+class TimeMeReset(Operator):
     bl_idname = 'timeme.reset'
     bl_label = 'Are you sure?'
+    bl_description = 'Reset TimeMe statistic'
 
     def execute(self, context):
-        TimeMe.clear()
+        TIMEME_OT_start.clear(context=context)
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=90)
 
-class TimeMeCatsItem(bpy.types.PropertyGroup):
-    catname = bpy.props.StringProperty(name='catname', default='')
-    cattime = bpy.props.FloatProperty(name='cattime')
-    cattime_str = bpy.props.StringProperty(name='cattime')
+
+class TimeMeCategoryItem(PropertyGroup):
+    category_name: StringProperty(
+        name='category_name',
+        default=''
+    )
+    category_time: FloatProperty(
+        name='category_time'
+    )
+    category_time_str: StringProperty(
+        name='category_time'
+    )
 
 
-class TimeMeVars(bpy.types.PropertyGroup):
-    cats = bpy.props.CollectionProperty(type=TimeMeCatsItem, name='cats')
-    activecat = bpy.props.IntProperty(name='activecat', default=-1)
+class TimeMeVars(PropertyGroup):
+    categories: CollectionProperty(
+        type=TimeMeCategoryItem,
+        name='categories'
+    )
+    active_category: IntProperty(
+        name='active_category',
+        default=-1
+    )
 
 
+# starting an add-on (delayed to prevent errors)
 @persistent
-def onsceneload_post(scene):
+def timeme_depsgraph_update_post(scene):
+    bpy.app.handlers.depsgraph_update_post.remove(timeme_depsgraph_update_post)
     bpy.ops.timeme.start()
 
+
 @persistent
-def onsceneload_pre(scene):
-    TimeMe.stop()
+def timeme_timer_depsgraph_update():
+        bpy.context.scene.cursor.location[0] = bpy.context.scene.cursor.location[0]
+
+# restarting while reloading scene
+@persistent
+def timeme_load_pre(scene):
+    TIMEME_OT_start.stop(context=bpy.context)
 
 
+@persistent
+def timeme_load_post(scene):
+    bpy.ops.timeme.start()
+
+
+# registering
 def register():
-    bpy.utils.register_class(TimeMe)
-    bpy.utils.register_class(TimeMePrint)
-    bpy.utils.register_class(TimeMeToClipboard)
-    bpy.utils.register_class(TimeMeReset)
-    bpy.utils.register_class(TimeMeCatsItem)
-    bpy.utils.register_class(TimeMeVars)
-    if onsceneload_pre not in bpy.app.handlers.load_pre:
-        bpy.app.handlers.load_pre.append(onsceneload_pre)
-    if onsceneload_post not in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.append(onsceneload_post)
+    register_class(TimeMeCategoryItem)
+    register_class(TimeMeVars)
+    register_class(TIMEME_OT_start)
+    register_class(TimeMePrint)
+    register_class(TimeMeToClipboard)
+    register_class(TimeMeReset)
+    if timeme_load_pre not in bpy.app.handlers.load_pre:
+        bpy.app.handlers.load_pre.append(timeme_load_pre)
+    if timeme_load_post not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(timeme_load_post)
+    # start
+    if timeme_depsgraph_update_post not in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.append(timeme_depsgraph_update_post)
+    bpy.app.timers.register(timeme_timer_depsgraph_update, first_interval=1.0)
 
 
 def unregister():
-    TimeMe.stop()
-    if onsceneload_pre in bpy.app.handlers.load_pre:
-        bpy.app.handlers.load_pre.remove(onsceneload_pre)
-    if onsceneload_post in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(onsceneload_post)
-    bpy.utils.unregister_class(TimeMe)
-    bpy.utils.unregister_class(TimeMeReset)
-    bpy.utils.unregister_class(TimeMeToClipboard)
-    bpy.utils.unregister_class(TimeMePrint)
-    bpy.utils.unregister_class(TimeMeCatsItem)
-    bpy.utils.unregister_class(TimeMeVars)
+    TIMEME_OT_start.stop(context=bpy.context)
+    if timeme_load_pre in bpy.app.handlers.load_pre:
+        bpy.app.handlers.load_pre.remove(timeme_load_pre)
+    if timeme_load_post in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(timeme_load_post)
+    unregister_class(TimeMeReset)
+    unregister_class(TimeMeToClipboard)
+    unregister_class(TimeMePrint)
+    unregister_class(TIMEME_OT_start)
+    unregister_class(TimeMeVars)
+    unregister_class(TimeMeCategoryItem)
