@@ -27,8 +27,6 @@ The add-on works in the background, fixing the project developing time.
 
 <img src="https://b3d.interplanety.org/wp-content/upload_content/2018/01/02-400x212.jpg">
 
-&nbsp;
-
 System autosave doesn't work with running TimeMe. To fix this you can use the built-in TimeMe autosave. To do this - check the "Enable autosave with TimeMe" checkbox in the add-on preferences. 
 
 ### Version history
