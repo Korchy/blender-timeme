@@ -7,27 +7,33 @@ Author: Nikita Akimov interplanety@interplanety.org
 
 <img src="https://b3d.interplanety.org/wp-content/upload_content/2017/12/00-1-400x212.jpg" title="TimeMe">
 
-**Current version**
+### Current version
 
-1.1.2
+**1.2.0. (for Blender 2.80)**
 
-**Installation**
+Version 1.1.2. for Blender 2.7x is frozen. You can get the last release <a href = "https://github.com/Korchy/blender-timeme/releases/tag/v1.1.2">here</a>. 
 
-User Preferences - Add-ons - Install Add-on from File - select downloaded archive
+### Installation
 
-**Usage**
+User Preferences - Add-ons - Install Add-on from File - select distributive archive
 
-Location: "Properties" window - "Render" tab - "TimeMe" subtab
+### Location
+
+"Properties" window - "Render" tab - "TimeMe" subtab
+
+### Usage
 
 The add-on works in the background, fixing the project developing time.
 
 <img src="https://b3d.interplanety.org/wp-content/upload_content/2018/01/02-400x212.jpg">
 
-**Tested with Blender versions:**
+&nbsp;
 
-2.79
+### Version history
 
-**Version history:**
+1.2.0.
+- Ported to Blender 2.80. Version for 2.7x frozen.
+- Added new monitoring category "ACTIVE TIME" - time with main Blender window being active
 
 1.1.2
 - Enable counting the mouse move event in work time category
