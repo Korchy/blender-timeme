@@ -9,7 +9,7 @@ Author: Nikita Akimov interplanety@interplanety.org
 
 ### Current version
 
-**1.2.0. (for Blender 2.80)**
+**1.2.0. (for Blender 2.8x, 2,9x)**
 
 Version 1.1.2. for Blender 2.7x is frozen. You can get the last release <a href = "https://github.com/Korchy/blender-timeme/releases/tag/v1.1.2">here</a>. 
 
