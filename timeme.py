@@ -8,10 +8,15 @@ import bpy
 import datetime
 from .datetimeex import DateTimeEx
 from bpy.app.handlers import persistent
-from bpy.props import FloatProperty, StringProperty, IntProperty, CollectionProperty, PointerProperty
+from bpy.props import FloatProperty, StringProperty, IntProperty, CollectionProperty, PointerProperty, EnumProperty
 from bpy.types import Operator, PropertyGroup
 from bpy.utils import register_class, unregister_class
 import os
+
+
+class TimeMeStatic:
+    status = None
+    current_time = datetime.datetime.now()
 
 
 class TIMEME_OT_start(Operator):
@@ -19,9 +24,7 @@ class TIMEME_OT_start(Operator):
     bl_label = 'TimeMe: Start'
     bl_description = 'Start TimeMe monitor'
 
-    _status = None
     _events_list = []
-    _current_time = datetime.datetime.now()
     _current_window_active = True
     _current_render_time = None
     _current_autosave_time = datetime.datetime.now()
@@ -29,53 +32,66 @@ class TIMEME_OT_start(Operator):
     _work_time_damping = 10  # sec
 
     def execute(self, context):
-        if self._status:     # prevent double run
+        if TimeMeStatic.status:     # prevent double run
             return {'FINISHED'}
-        __class__.start()
+        self.start()
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        if self._status:
-            if event.type not in self._events_list:
-                self._events_list.append(event.type)
-            # check window deactivation - activation
-            if event.type == 'WINDOW_DEACTIVATE':
-                self._current_window_active = False
-            elif (not self._current_window_active) and event.type not in ['MOUSEMOVE', 'INBETWEEN_MOUSEMOVE', 'NONE'] and event.type[:5] not in ['TIMER', 'NDOF_']:
-                self._current_window_active = True
-            # count time by categories
-            if datetime.datetime.now() - datetime.timedelta(seconds=self._check_interval) > self._current_time:
-                # ALL TIME
-                __class__._increase_category_time(context=context, category_name='ALL TIME', time_interval=(datetime.datetime.now() - self._current_time))
-                # ACTIVE TIME
-                if self._current_window_active:
-                    __class__._increase_category_time(context=context, category_name='ACTIVE TIME', time_interval=(datetime.datetime.now() - self._current_time))
-                # WORK TIME
-                work_event = any((event not in ['NONE', 'WINDOW_DEACTIVATE'] and event[:5] not in ['TIMER', 'NDOF_']) for event in self._events_list)
-                if work_event and self._current_window_active:
-                    if datetime.datetime.now() - datetime.timedelta(seconds=self._work_time_damping) > self._current_time:
-                        time = datetime.timedelta(seconds=self._work_time_damping)
-                    else:
-                        time = datetime.datetime.now() - self._current_time
-                    __class__._increase_category_time(context=context, category_name='WORK TIME', time_interval=time)
-                # wait for new events
-                self._current_time = datetime.datetime.now()
-                del self._events_list[:]
-                # redraw
-                __class__._redraw(context=context)
-                # check autosave
-                if context.preferences.filepaths.use_auto_save_temporary_files and context.preferences.addons[__package__].preferences.use_timeme_auto_save:
-                    if datetime.datetime.now() - datetime.timedelta(minutes=context.preferences.filepaths.auto_save_time) > self._current_autosave_time:
-                        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(context.preferences.filepaths.temporary_directory, __class__.project_name()), copy=True, check_existing=False)
-                        self._current_autosave_time = datetime.datetime.now()
+        if TimeMeStatic.status:
+            if TimeMeStatic.status == 'RUNNING':
+                if event.type not in self._events_list:
+                    self._events_list.append(event.type)
+                # check window deactivation - activation
+                if event.type == 'WINDOW_DEACTIVATE':
+                    self._current_window_active = False
+                elif (not self._current_window_active) and event.type not in ['MOUSEMOVE', 'INBETWEEN_MOUSEMOVE', 'NONE'] and event.type[:5] not in ['TIMER', 'NDOF_']:
+                    self._current_window_active = True
+                # count time by categories
+                if datetime.datetime.now() - datetime.timedelta(seconds=self._check_interval) > TimeMeStatic.current_time:
+                    # ALL TIME
+                    self._increase_category_time(
+                        context=context,
+                        category_name='ALL TIME',
+                        time_interval=(datetime.datetime.now() - TimeMeStatic.current_time)
+                    )
+                    # ACTIVE TIME
+                    if self._current_window_active:
+                        self._increase_category_time(
+                            context=context,
+                            category_name='ACTIVE TIME',
+                            time_interval=(datetime.datetime.now() - TimeMeStatic.current_time)
+                        )
+                    # WORK TIME
+                    work_event = any((event not in ['NONE', 'WINDOW_DEACTIVATE'] and event[:5] not in ['TIMER', 'NDOF_']) for event in self._events_list)
+                    if work_event and self._current_window_active:
+                        if datetime.datetime.now() - datetime.timedelta(seconds=self._work_time_damping) > TimeMeStatic.current_time:
+                            time = datetime.timedelta(seconds=self._work_time_damping)
+                        else:
+                            time = datetime.datetime.now() - TimeMeStatic.current_time
+                        self._increase_category_time(
+                            context=context,
+                            category_name='WORK TIME',
+                            time_interval=time
+                        )
+                    # wait for new events
+                    TimeMeStatic.current_time = datetime.datetime.now()
+                    del self._events_list[:]
+                    # redraw
+                    self._redraw(context=context)
+                    # check autosave
+                    if context.preferences.filepaths.use_auto_save_temporary_files and context.preferences.addons[__package__].preferences.use_timeme_auto_save:
+                        if datetime.datetime.now() - datetime.timedelta(minutes=context.preferences.filepaths.auto_save_time) > self._current_autosave_time:
+                            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(context.preferences.filepaths.temporary_directory, __class__.project_name()), copy=True, check_existing=False)
+                            self._current_autosave_time = datetime.datetime.now()
             return {'PASS_THROUGH'}
         else:
             return {'FINISHED'}
 
     @staticmethod
     def start():
-        if not __class__._status:
+        if not TimeMeStatic.status:
             __class__._reset()
             if __class__._timeme_render_init not in bpy.app.handlers.render_init:
                 bpy.app.handlers.render_init.append(__class__._timeme_render_init)
@@ -83,12 +99,12 @@ class TIMEME_OT_start(Operator):
                 bpy.app.handlers.render_complete.append(__class__._timeme_render_complete)
             if __class__._timeme_render_cancel not in bpy.app.handlers.render_cancel:
                 bpy.app.handlers.render_cancel.append(__class__._timeme_render_cancel)
-            __class__._status = 'RUNNING'
+            TimeMeStatic.status = 'RUNNING'
 
     @staticmethod
     def stop(context):
-        if __class__._status:
-            __class__._status = None
+        if TimeMeStatic.status:
+            TimeMeStatic.status = None
             if hasattr(bpy.types.Scene, 'timeme_vars'):
                 __class__.clear(context=context)
                 del bpy.types.Scene.timeme_vars
@@ -103,7 +119,7 @@ class TIMEME_OT_start(Operator):
     def _reset():
         # reset timeme data
         bpy.types.Scene.timeme_vars = PointerProperty(type=TimeMeVars)
-        __class__._current_time = datetime.datetime.now()
+        TimeMeStatic.current_time = datetime.datetime.now()
 
     @staticmethod
     def clear(context):
@@ -149,8 +165,14 @@ class TIMEME_OT_start(Operator):
     @staticmethod
     def _timeme_render_complete(scene):
         if __class__._current_render_time:
-            __class__._increase_category_time(context=bpy.context, category_name='RENDER TIME', time_interval=(datetime.datetime.now() - __class__._current_render_time))
-            __class__._redraw()
+            # RENDER TIME
+            if TimeMeStatic.status == 'RUNNING':
+                __class__._increase_category_time(
+                    context=bpy.context,
+                    category_name='RENDER TIME',
+                    time_interval=(datetime.datetime.now() - __class__._current_render_time)
+                )
+                __class__._redraw()
             __class__._current_render_time = None
 
     @staticmethod
@@ -177,6 +199,7 @@ class TIMEME_OT_start(Operator):
         else:
             return 'untitled.blend'
 
+
 class TimeMePrint(Operator):
     bl_idname = 'timeme.print'
     bl_label = 'TimeMe: Print'
@@ -193,6 +216,29 @@ class TimeMePrint(Operator):
         if show_in_area:
             show_in_area.spaces.active.text = bpy.data.texts['TimeMe']
             bpy.data.texts['TimeMe'].current_line_index = 0
+        return {'FINISHED'}
+
+
+class TimeMePauseResume(Operator):
+    bl_idname = 'timeme.pause_resume'
+    bl_label = 'TimeMe: Pause-Resume'
+    bl_description = 'Pause-Resume TimeMe'
+
+    switch_to: EnumProperty(
+        items=[
+            ('PAUSE', 'Pause', 'Pause', '', 0),
+            ('RESUME', 'Resume', 'Resume', '', 1)
+        ],
+        default='PAUSE'
+    )
+
+    def execute(self, context):
+        # Pause or Resume TimeMe
+        if self.switch_to == 'PAUSE' and TimeMeStatic.status is not None:
+            TimeMeStatic.status = 'PAUSED'
+        elif self.switch_to == 'RESUME' and TimeMeStatic.status == 'PAUSED':
+            TimeMeStatic.current_time = datetime.datetime.now()
+            TimeMeStatic.status = 'RUNNING'
         return {'FINISHED'}
 
 
@@ -273,6 +319,7 @@ def register():
     register_class(TimeMePrint)
     register_class(TimeMeToClipboard)
     register_class(TimeMeReset)
+    register_class(TimeMePauseResume)
     if timeme_load_pre not in bpy.app.handlers.load_pre:
         bpy.app.handlers.load_pre.append(timeme_load_pre)
     if timeme_load_post not in bpy.app.handlers.load_post:
@@ -289,6 +336,7 @@ def unregister():
         bpy.app.handlers.load_pre.remove(timeme_load_pre)
     if timeme_load_post in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(timeme_load_post)
+    unregister_class(TimeMePauseResume)
     unregister_class(TimeMeReset)
     unregister_class(TimeMeToClipboard)
     unregister_class(TimeMePrint)

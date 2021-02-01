@@ -6,6 +6,7 @@
 
 from bpy.types import Panel, UIList
 from bpy.utils import register_class, unregister_class
+from .timeme import TimeMeStatic
 
 
 class TIMEME_UL_cats_list(UIList):
@@ -28,6 +29,12 @@ class TIMEME_PT_panel(Panel):
             row = layout.row()
             row.operator('timeme.print', icon='FILE_TEXT', text='To Text')
             row.operator('timeme.toclipboard', icon='COPYDOWN', text='To Clipboard')
+            if TimeMeStatic.status == 'RUNNING':
+                op = row.operator('timeme.pause_resume', icon='PAUSE', text='Pause')
+                op.switch_to = 'PAUSE'
+            elif TimeMeStatic.status == 'PAUSED':
+                op = row.operator('timeme.pause_resume', icon='PLAY', text='Resume')
+                op.switch_to = 'RESUME'
             row.operator('timeme.reset', icon='X', text='Reset')
 
 

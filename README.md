@@ -9,7 +9,7 @@ Author: Nikita Akimov interplanety@interplanety.org
 
 ### Current version
 
-**1.2.0. (for Blender 2.8x, 2,9x)**
+**1.3.0. (for Blender 2.8x, 2,9x)**
 
 Version 1.1.2. for Blender 2.7x is frozen. You can get the last release <a href = "https://github.com/Korchy/blender-timeme/releases/tag/v1.1.2">here</a>. 
 
@@ -38,6 +38,9 @@ System autosave doesn't work with running TimeMe. To fix this you can use the bu
 Check this option if you want to add time of cancelled renderings to the "RENDER TIME" category. 
 
 ### Version history
+
+1.3.0.
+- Added the "Pause - Resume" option
 
 1.2.0.
 - Ported to Blender 2.80. Version for 2.7x frozen.
