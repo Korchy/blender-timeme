@@ -39,6 +39,9 @@ Check this option if you want to add time of cancelled renderings to the "RENDER
 
 ### Version history
 
+1.4.0.
+- Added custom directory for TimeMe autosaves to fix permissions problems
+
 1.3.0.
 - Added the "Pause - Resume" option
 

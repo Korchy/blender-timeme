@@ -13,7 +13,7 @@ bl_info = {
     'name': 'TimeMe',
     'category': 'System',
     'author': 'Nikita Akimov',
-    'version': (1, 3, 0),
+    'version': (1, 4, 0),
     'blender': (2, 80, 0),
     'location': 'Properties window - Render tab - TimeMe subpanel',
     'wiki_url': 'https://b3d.interplanety.org/en/blender-timeme/',

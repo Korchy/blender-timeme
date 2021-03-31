@@ -12,6 +12,7 @@ from bpy.props import FloatProperty, StringProperty, IntProperty, CollectionProp
 from bpy.types import Operator, PropertyGroup
 from bpy.utils import register_class, unregister_class
 import os
+import tempfile
 
 
 class TimeMeStatic:
@@ -83,7 +84,7 @@ class TIMEME_OT_start(Operator):
                     # check autosave
                     if context.preferences.filepaths.use_auto_save_temporary_files and context.preferences.addons[__package__].preferences.use_timeme_auto_save:
                         if datetime.datetime.now() - datetime.timedelta(minutes=context.preferences.filepaths.auto_save_time) > self._current_autosave_time:
-                            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(context.preferences.filepaths.temporary_directory, __class__.project_name()), copy=True, check_existing=False)
+                            bpy.ops.wm.save_as_mainfile(filepath=self.autosave_path(context=context), copy=True, check_existing=False)
                             self._current_autosave_time = datetime.datetime.now()
             return {'PASS_THROUGH'}
         else:
@@ -198,6 +199,15 @@ class TIMEME_OT_start(Operator):
             return os.path.splitext(os.path.basename(bpy.data.filepath))[0] + '.blend'
         else:
             return 'untitled.blend'
+
+    @classmethod
+    def autosave_path(cls, context):
+        # returns custom directory for autosaves
+        directory = context.preferences.addons[__package__].preferences.timeme_autosave_dir
+        if not directory:
+            directory = tempfile.gettempdir()
+        path = os.path.join(directory, cls.project_name())
+        return path
 
 
 class TimeMePrint(Operator):

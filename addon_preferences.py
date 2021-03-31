@@ -5,7 +5,7 @@
 #   https://github.com/Korchy/blender-timeme
 
 from bpy.types import AddonPreferences
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, StringProperty
 from bpy.utils import register_class, unregister_class
 
 
@@ -22,10 +22,18 @@ class TIMEME_addon_preferences(AddonPreferences):
         default=False
     )
 
+    timeme_autosave_dir: StringProperty(
+        name='Custom directory for autosaves',
+        default='',
+        subtype='DIR_PATH'
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, 'consider_canceled_rendering_time')
-        layout.prop(self, 'use_timeme_auto_save')
+        box = layout.box()
+        box.prop(self, 'use_timeme_auto_save')
+        box.prop(self, 'timeme_autosave_dir')
 
 
 def register():
